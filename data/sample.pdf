@@ -1,0 +1,80 @@
+%PDF-1.4
+1 0 obj
+<< /Type /Catalog /Pages 2 0 R >>
+endobj
+2 0 obj
+<< /Type /Pages /Kids [3 0 R] /Count 1 >>
+endobj
+3 0 obj
+<< /Type /Page /Parent 2 0 R /MediaBox [0 0 612 792] /Contents 4 0 R /Resources << /Font << /F1 5 0 R >> >> >>
+endobj
+4 0 obj
+<< /Length 1554 >>
+stream
+BT
+/F1 12 Tf
+72 760 Td
+14 TL
+(RAG Chatbot Sample Document) Tj
+T*
+() Tj
+T*
+(This document exists to test the retrieval augmented generation pipeline.) Tj
+T*
+(The capital of France is Paris. The Eiffel Tower is located in Paris.) Tj
+T*
+(MongoDB Atlas Vector Search stores high dimensional embedding vectors and) Tj
+T*
+(supports approximate nearest neighbor search using the cosine similarity metric.) Tj
+T*
+(Google Gemini provides the text-embedding-004 model which outputs 768 numbers) Tj
+T*
+(per chunk of text. The chat model used in this project is gemini-2.0-flash.) Tj
+T*
+() Tj
+T*
+(Retrieval augmented generation works in three stages. First, documents are) Tj
+T*
+(split into overlapping chunks. Second, each chunk is embedded into a vector and) Tj
+T*
+(stored in a database. Third, at query time the user question is embedded and the) Tj
+T*
+(most similar chunks are retrieved and passed to the language model as context.) Tj
+T*
+() Tj
+T*
+(The recommended chunk size for this project is one thousand characters with an) Tj
+T*
+(overlap of two hundred characters. Overlap preserves context across boundaries.) Tj
+T*
+(This sample text is intentionally long enough to produce more than one chunk so) Tj
+T*
+(that splitting behavior can be observed clearly during the seeding step.) Tj
+T*
+() Tj
+T*
+(Frequently asked question: What database does this project use for vectors?) Tj
+T*
+(Answer: It uses MongoDB Atlas Vector Search. Frequently asked question: which) Tj
+T*
+(embedding model is used? Answer: Google Gemini text-embedding-004 with 768 dims.) Tj
+T*
+ET
+endstream
+endobj
+5 0 obj
+<< /Type /Font /Subtype /Type1 /BaseFont /Helvetica >>
+endobj
+xref
+0 6
+0000000000 65535 f 
+0000000009 00000 n 
+0000000058 00000 n 
+0000000115 00000 n 
+0000000241 00000 n 
+0000001847 00000 n 
+trailer
+<< /Size 6 /Root 1 0 R >>
+startxref
+1917
+%%EOF
