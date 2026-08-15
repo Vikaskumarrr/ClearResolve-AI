@@ -17,8 +17,38 @@ export default function Home() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
 
+  const [uploading, setUploading] = useState(false);
+  const [uploadMsg, setUploadMsg] = useState<string | null>(null);
+  const fileRef = useRef<HTMLInputElement>(null);
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
+
+  async function uploadFile(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    setUploading(true);
+    setUploadMsg(null);
+    try {
+      const body = new FormData();
+      body.append("file", file);
+
+      const res = await fetch("/api/upload", { method: "POST", body });
+      const data = await res.json();
+
+      setUploadMsg(
+        data.ok
+          ? `Indexed "${data.file}" (${data.chunks} chunks). Ask away!`
+          : data.error ?? "Upload failed"
+      );
+    } catch {
+      setUploadMsg("Upload failed");
+    } finally {
+      setUploading(false);
+      if (fileRef.current) fileRef.current.value = ""; // allow re-uploading same file
+    }
+  }
 
   useEffect(() => {
     scrollRef.current?.scrollTo({
@@ -108,6 +138,11 @@ export default function Home() {
             <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
             Online
           </span>
+          {uploadMsg && (
+  <p className="mx-auto max-w-3xl px-4 py-2 text-center text-xs text-zinc-500 dark:text-zinc-400">
+    {uploadMsg}
+  </p>
+)}
         </div>
       </header>
 
@@ -163,6 +198,12 @@ export default function Home() {
             </div>
           )}
         </div>
+        {uploading && (
+  <div className="flex items-center justify-center gap-2 border-b border-black/5 bg-indigo-500/5 py-2 text-sm text-indigo-600 dark:border-white/10 dark:text-indigo-400">
+    <span className="h-4 w-4 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
+    Indexing your document…
+  </div>
+)}
       </main>
 
       {/* Composer */}
@@ -181,6 +222,28 @@ export default function Home() {
               placeholder="Ask about your document…"
               className="max-h-40 flex-1 resize-none bg-transparent px-2 py-2 text-sm text-zinc-800 placeholder:text-zinc-400 focus:outline-none dark:text-zinc-100"
             />
+            <input
+  ref={fileRef}
+  id="pdf-upload"
+  type="file"
+  accept="application/pdf"
+  onChange={uploadFile}
+  disabled={uploading}
+  className="hidden"
+/>
+<label
+  htmlFor="pdf-upload"
+  className="flex cursor-pointer items-center gap-2 rounded-full border border-black/10 bg-white/70 px-3 py-1.5 text-xs font-medium text-zinc-700 transition hover:bg-white dark:border-white/10 dark:bg-white/[0.05] dark:text-zinc-200"
+>
+  {uploading ? (
+    <>
+      <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-indigo-500 border-t-transparent" />
+      Indexing…
+    </>
+  ) : (
+    "Upload PDF"
+  )}
+</label>
             <button
               type="submit"
               disabled={loading || !input.trim()}
