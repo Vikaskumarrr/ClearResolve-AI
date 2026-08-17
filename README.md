@@ -1,6 +1,11 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+ClearResolveAI turns your documents and websites into a searchable knowledge base, then answers your questions with accurate, cited responses.
 
 ## Getting Started
+
+<img width="1434" height="787" alt="image" src="https://github.com/user-attachments/assets/18ac7f8a-88cc-4e61-986d-4a0feebf5c2b" />
+<img width="1458" height="778" alt="image" src="https://github.com/user-attachments/assets/51bfa614-6a47-41f7-a6c1-65e0b44dadb1" />
+
+
 
 First, run the development server:
 
