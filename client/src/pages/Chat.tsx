@@ -360,8 +360,12 @@ export default function Chat() {
       <aside className="hidden w-[272px] shrink-0 flex-col border-r border-black/5 bg-white/50 backdrop-blur-xl lg:flex">
         {/* Brand row */}
         <div className="flex items-center gap-2.5 px-4 py-4">
-          <div className="flex h-8 w-8 items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-lg shadow-indigo-500/25">
-            <Icon className="h-4 w-4 text-white" path={ICONS.logo} />
+          <div className="flex h-8 w-8 items-center justify-center overflow-hidden rounded-xl shadow-lg shadow-indigo-500/25">
+            <img
+              src="/logo.png"
+              alt="ClearResolveAI logo"
+              className="h-full w-full object-cover"
+            />
           </div>
           <span className="text-base font-semibold tracking-tight">
             ClearResolveAI

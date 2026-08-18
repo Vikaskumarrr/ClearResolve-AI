@@ -40,9 +40,13 @@ function Logo({ className = "h-8 w-8" }: { className?: string }) {
   return (
     <div className="flex items-center gap-2">
       <div
-        className={`flex items-center justify-center rounded-xl bg-gradient-to-br from-indigo-500 to-violet-600 shadow-lg shadow-indigo-500/25 ${className}`}
+        className={`overflow-hidden rounded-xl shadow-lg shadow-indigo-500/25 ${className}`}
       >
-        <Icon className="h-4 w-4 text-white" path={BeeGlyph} />
+        <img
+          src="/logo.png"
+          alt="ClearResolveAI logo"
+          className="h-full w-full object-cover"
+        />
       </div>
       <span className="text-lg font-semibold tracking-tight">ClearResolveAI</span>
     </div>
@@ -966,8 +970,12 @@ function SiteFooter() {
       <div className="relative border-t border-black/5">
         <div className="mx-auto flex max-w-6xl flex-col items-center justify-between gap-4 px-5 py-5 sm:flex-row">
           <div className="flex items-center gap-2 text-sm text-zinc-500">
-            <span className="flex h-6 w-6 items-center justify-center rounded-md bg-gradient-to-br from-indigo-500 to-violet-600 shadow-sm">
-              <Icon className="h-3.5 w-3.5 text-white" path={BeeGlyph} />
+            <span className="flex h-6 w-6 items-center justify-center overflow-hidden rounded-md shadow-sm">
+              <img
+                src="/logo.png"
+                alt="ClearResolveAI logo"
+                className="h-full w-full object-cover"
+              />
             </span>
             © 2025 ClearResolveAI. All Rights Reserved.
           </div>
@@ -1266,7 +1274,11 @@ function AppPreview() {
             + New Tab
           </span>
           <span className="inline-flex min-w-0 items-center gap-1.5 rounded-md bg-white px-2 py-1 text-[11px] text-zinc-600 shadow-sm">
-            <Icon className="h-3 w-3 text-violet-500" path={BeeGlyph} />
+            <img
+              src="/logo.png"
+              alt="ClearResolveAI logo"
+              className="h-3 w-3 rounded-[3px] object-cover"
+            />
             <span className="truncate">clearresolve.ai</span>
             <Icon className="h-3 w-3 text-zinc-300" path={<path d="M18 6 6 18M6 6l12 12" />} />
           </span>
