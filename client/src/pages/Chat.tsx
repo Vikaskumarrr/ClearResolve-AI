@@ -1,5 +1,6 @@
 import { useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
+import { filterByTitle } from "./chatSearch";
 
 /* ---------------------------------- Types --------------------------------- */
 
@@ -8,6 +9,13 @@ type Message = {
   role: "user" | "assistant";
   content: string;
   citations?: Citation[];
+};
+
+/** Sidebar conversation entry as returned by the Conversation_Store. */
+type SidebarConversation = {
+  _id: string;
+  title: string;
+  updatedAt?: string;
 };
 
 /* ---------------------------------- Icons --------------------------------- */
@@ -93,6 +101,18 @@ const ICONS = {
       <circle cx="5" cy="12" r="1" />
     </>
   ),
+  pencil: (
+    <>
+      <path d="M12 20h9" />
+      <path d="M16.5 3.5a2.12 2.12 0 0 1 3 3L7 19l-4 1 1-4Z" />
+    </>
+  ),
+  trash: (
+    <>
+      <path d="M3 6h18M8 6V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2m2 0v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6" />
+      <path d="M10 11v6M14 11v6" />
+    </>
+  ),
   link: (
     <>
       <path d="M10 13a5 5 0 0 0 7.54.54l3-3a5 5 0 0 0-7.07-7.07l-1.72 1.71" />
@@ -156,34 +176,6 @@ const ICONS = {
 
 /* --------------------------------- Content -------------------------------- */
 
-const HISTORY: { label: string; items: string[] }[] = [
-  {
-    label: "Today",
-    items: [
-      "Summarize the Q3 report",
-      "What's our refund policy",
-      "Find the API rate limits",
-    ],
-  },
-  {
-    label: "Yesterday",
-    items: [
-      "What does the doc say about security…",
-      "Where is pricing mentioned in the co…",
-    ],
-  },
-  {
-    label: "7 days",
-    items: [
-      "Key takeaways from the onboarding g…",
-      "Summarize the crawled docs site",
-      "What are the supported file formats…",
-      "Find the section about data retention…",
-      "List the citations for the last answer…",
-    ],
-  },
-];
-
 const NAV: { label: string; icon: React.ReactNode }[] = [
   { label: "Explore", icon: ICONS.globe },
   { label: "Library", icon: ICONS.library },
@@ -226,6 +218,17 @@ export default function Chat() {
   const [uploadMsg, setUploadMsg] = useState<string | null>(null);
   const fileRef = useRef<HTMLInputElement>(null);
 
+  // Conversation history sidebar state.
+  const [conversations, setConversations] = useState<SidebarConversation[]>([]);
+  const [convLoading, setConvLoading] = useState(true);
+  const [convError, setConvError] = useState<string | null>(null);
+  const [actionError, setActionError] = useState<string | null>(null);
+  const [search, setSearch] = useState("");
+  const [activeId, setActiveId] = useState<string | null>(null);
+  const [openingConv, setOpeningConv] = useState(false);
+  const [renamingId, setRenamingId] = useState<string | null>(null);
+  const [renameValue, setRenameValue] = useState("");
+
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -235,6 +238,38 @@ export default function Chat() {
       behavior: "smooth",
     });
   }, [messages, loading]);
+
+  // Load the user's conversation list on mount (Requirements 4.1–4.5).
+  useEffect(() => {
+    let mounted = true;
+    (async () => {
+      setConvLoading(true);
+      setConvError(null);
+      try {
+        const res = await fetch("/api/conversations", {
+          credentials: "include",
+        });
+        const data = await res.json();
+        if (!mounted) return;
+        if (res.ok) {
+          setConversations(
+            Array.isArray(data.conversations) ? data.conversations : []
+          );
+        } else {
+          setConvError(
+            data?.error?.message ?? "Failed to load conversations."
+          );
+        }
+      } catch {
+        if (mounted) setConvError("Failed to reach the server.");
+      } finally {
+        if (mounted) setConvLoading(false);
+      }
+    })();
+    return () => {
+      mounted = false;
+    };
+  }, []);
 
   async function uploadFile(e: React.ChangeEvent<HTMLInputElement>) {
     const file = e.target.files?.[0];
@@ -276,23 +311,63 @@ export default function Chat() {
     setLoading(true);
 
     try {
-      const res = await fetch("/api/chat", {
+      // Lazily create a conversation on the first send (Requirement 3.2/3.3).
+      let convId = activeId;
+      if (!convId) {
+        const createRes = await fetch("/api/conversations", {
+          method: "POST",
+          credentials: "include",
+        });
+        const createData = await createRes.json();
+        if (!createRes.ok) {
+          setMessages((m) => [
+            ...m,
+            {
+              role: "assistant",
+              content:
+                createData?.error?.message ?? "Something went wrong.",
+            },
+          ]);
+          return;
+        }
+        convId = createData.conversation._id as string;
+        setActiveId(convId);
+      }
+
+      const res = await fetch(`/api/conversations/${convId}/messages`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         credentials: "include",
-        body: JSON.stringify({ message: userMsg.content }),
+        body: JSON.stringify({ message: trimmed }),
       });
       const data = await res.json();
 
       if (res.ok) {
+        const assistant = data.assistantMessage;
         setMessages((m) => [
           ...m,
           {
             role: "assistant",
-            content: data.answer ?? "No response",
-            citations: Array.isArray(data.citations) ? data.citations : [],
+            content: assistant?.content ?? "No response",
+            citations: Array.isArray(assistant?.citations)
+              ? assistant.citations
+              : [],
           },
         ]);
+
+        // Update the sidebar item's title and move it to the top
+        // (most-recently-updated first — Requirements 6.3, 4.1).
+        const finalId = convId;
+        setConversations((list) => {
+          const existing = list.find((c) => c._id === finalId);
+          const updated: SidebarConversation = {
+            _id: finalId,
+            title: data.title ?? existing?.title ?? "",
+            updatedAt: new Date().toISOString(),
+          };
+          const rest = list.filter((c) => c._id !== finalId);
+          return [updated, ...rest];
+        });
       } else {
         setMessages((m) => [
           ...m,
@@ -313,6 +388,122 @@ export default function Chat() {
     }
   }
 
+  // Open a past conversation and render its full message history with saved
+  // citations (Requirements 5.1–5.5).
+  async function openConversation(id: string) {
+    if (openingConv) return;
+    setActiveId(id);
+    setUploadMsg(null);
+    setActionError(null);
+    setOpeningConv(true);
+    try {
+      const res = await fetch(`/api/conversations/${id}`, {
+        credentials: "include",
+      });
+      const data = await res.json();
+      if (res.ok) {
+        const mapped: Message[] = Array.isArray(data.messages)
+          ? data.messages.map(
+              (m: {
+                role: "user" | "assistant";
+                content: string;
+                citations?: Citation[];
+              }) => ({
+                role: m.role,
+                content: m.content,
+                citations: Array.isArray(m.citations) ? m.citations : [],
+              })
+            )
+          : [];
+        setMessages(mapped);
+      } else {
+        setMessages([
+          {
+            role: "assistant",
+            content:
+              data?.error?.message ?? "Failed to open conversation.",
+          },
+        ]);
+      }
+    } catch {
+      setMessages([
+        { role: "assistant", content: "Error contacting the server." },
+      ]);
+    } finally {
+      setOpeningConv(false);
+    }
+  }
+
+  function startRename(id: string, currentTitle: string) {
+    setActionError(null);
+    setRenamingId(id);
+    setRenameValue(currentTitle);
+  }
+
+  function cancelRename() {
+    setRenamingId(null);
+    setRenameValue("");
+  }
+
+  // Rename a conversation (Requirements 8.1, 8.2, 8.3).
+  async function submitRename(id: string) {
+    const title = renameValue.trim();
+    // Reject blank titles client-side before sending (Requirement 8.2).
+    if (!title) {
+      cancelRename();
+      return;
+    }
+    try {
+      const res = await fetch(`/api/conversations/${id}`, {
+        method: "PATCH",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({ title }),
+      });
+      const data = await res.json();
+      if (res.ok) {
+        const newTitle = data.conversation?.title ?? title;
+        setConversations((list) =>
+          list.map((c) => (c._id === id ? { ...c, title: newTitle } : c))
+        );
+      } else {
+        setActionError(
+          data?.error?.message ?? "Failed to rename conversation."
+        );
+      }
+    } catch {
+      setActionError("Failed to reach the server.");
+    } finally {
+      cancelRename();
+    }
+  }
+
+  // Delete a conversation and clear the view if it was open
+  // (Requirements 9.1, 9.2, 9.3).
+  async function removeConversation(id: string) {
+    setActionError(null);
+    try {
+      const res = await fetch(`/api/conversations/${id}`, {
+        method: "DELETE",
+        credentials: "include",
+      });
+      if (res.ok) {
+        setConversations((list) => list.filter((c) => c._id !== id));
+        if (activeId === id) {
+          setActiveId(null);
+          setMessages([]);
+        }
+      } else {
+        const data = await res.json().catch(() => null);
+        setActionError(
+          data?.error?.message ?? "Failed to delete conversation."
+        );
+      }
+    } catch {
+      setActionError("Failed to reach the server.");
+    }
+  }
+
   function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     send(input);
@@ -329,6 +520,8 @@ export default function Chat() {
     setMessages([]);
     setInput("");
     setUploadMsg(null);
+    setActiveId(null);
+    setActionError(null);
     inputRef.current?.focus();
   }
 
@@ -346,6 +539,15 @@ export default function Chat() {
   }
 
   const hasMessages = messages.length > 0;
+
+  // Client-side title search (Requirements 10.1, 10.2, 10.3).
+  const filteredConversations = filterByTitle(conversations, search);
+  const showNoMatch =
+    !convLoading &&
+    !convError &&
+    conversations.length > 0 &&
+    filteredConversations.length === 0 &&
+    search.trim() !== "";
 
   return (
     <div className="relative flex h-screen overflow-hidden bg-[#f3f1fb] text-zinc-900">
@@ -397,6 +599,8 @@ export default function Chat() {
             <Icon className="h-4 w-4 text-zinc-400" path={ICONS.search} />
             <input
               type="text"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
               placeholder="Search"
               className="flex-1 bg-transparent text-sm text-zinc-700 placeholder:text-zinc-400 focus:outline-none"
             />
@@ -424,22 +628,87 @@ export default function Chat() {
 
         {/* History */}
         <div className="scroll-area flex-1 overflow-y-auto px-2 pb-2">
-          {HISTORY.map((group) => (
-            <div key={group.label} className="mb-3">
-              <p className="px-3 py-1 text-[11px] font-medium uppercase tracking-wide text-zinc-400">
-                {group.label}
-              </p>
-              {group.items.map((item, i) => (
-                <button
-                  key={`${group.label}-${i}`}
-                  type="button"
-                  className="block w-full truncate rounded-lg px-3 py-1.5 text-left text-sm text-zinc-500 transition hover:bg-black/5 hover:text-zinc-800"
-                >
-                  {item}
-                </button>
+          {actionError && (
+            <div className="mx-1 mb-2 rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-2 text-xs text-red-600">
+              {actionError}
+            </div>
+          )}
+
+          {convLoading ? (
+            <div className="flex items-center gap-2 px-3 py-4 text-sm text-zinc-500">
+              <span className="h-4 w-4 animate-spin rounded-full border-2 border-violet-500 border-t-transparent" />
+              Loading conversations…
+            </div>
+          ) : convError ? (
+            <div className="mx-1 rounded-lg border border-red-500/20 bg-red-500/5 px-3 py-2 text-xs text-red-600">
+              {convError}
+            </div>
+          ) : conversations.length === 0 ? (
+            <p className="px-3 py-4 text-sm text-zinc-400">
+              No conversations yet. Start a new chat.
+            </p>
+          ) : showNoMatch ? (
+            <p className="px-3 py-4 text-sm text-zinc-400">
+              No conversations match “{search.trim()}”.
+            </p>
+          ) : (
+            <div className="mb-3">
+              {filteredConversations.map((c) => (
+                <div key={c._id} className="group relative flex items-center">
+                  {renamingId === c._id ? (
+                    <input
+                      autoFocus
+                      value={renameValue}
+                      onChange={(e) => setRenameValue(e.target.value)}
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") {
+                          e.preventDefault();
+                          void submitRename(c._id);
+                        } else if (e.key === "Escape") {
+                          cancelRename();
+                        }
+                      }}
+                      onBlur={() => void submitRename(c._id)}
+                      className="w-full rounded-lg border border-violet-300 bg-white px-3 py-1.5 text-sm text-zinc-800 focus:outline-none"
+                    />
+                  ) : (
+                    <>
+                      <button
+                        type="button"
+                        onClick={() => void openConversation(c._id)}
+                        title={c.title || "Untitled"}
+                        className={`block w-full truncate rounded-lg px-3 py-1.5 pr-14 text-left text-sm transition hover:bg-black/5 ${
+                          activeId === c._id
+                            ? "bg-black/5 text-zinc-900"
+                            : "text-zinc-500 hover:text-zinc-800"
+                        }`}
+                      >
+                        {c.title || "Untitled"}
+                      </button>
+                      <div className="absolute right-1 hidden items-center gap-0.5 group-hover:flex">
+                        <button
+                          type="button"
+                          aria-label="Rename conversation"
+                          onClick={() => startRename(c._id, c.title)}
+                          className="flex h-7 w-7 items-center justify-center rounded-md text-zinc-400 transition hover:bg-black/5 hover:text-zinc-700"
+                        >
+                          <Icon className="h-4 w-4" path={ICONS.pencil} />
+                        </button>
+                        <button
+                          type="button"
+                          aria-label="Delete conversation"
+                          onClick={() => void removeConversation(c._id)}
+                          className="flex h-7 w-7 items-center justify-center rounded-md text-zinc-400 transition hover:bg-red-500/10 hover:text-red-600"
+                        >
+                          <Icon className="h-4 w-4" path={ICONS.trash} />
+                        </button>
+                      </div>
+                    </>
+                  )}
+                </div>
               ))}
             </div>
-          ))}
+          )}
         </div>
 
         {/* User card */}
@@ -516,7 +785,12 @@ export default function Chat() {
 
         {/* Scrollable content */}
         <main ref={scrollRef} className="scroll-area flex-1 overflow-y-auto">
-          {!hasMessages ? (
+          {openingConv ? (
+            <div className="flex min-h-full flex-col items-center justify-center gap-3 text-center">
+              <span className="h-8 w-8 animate-spin rounded-full border-2 border-violet-500 border-t-transparent" />
+              <p className="text-sm text-zinc-500">Loading conversation…</p>
+            </div>
+          ) : !hasMessages ? (
             <div className="mx-auto flex min-h-full max-w-3xl flex-col items-center px-4 pb-10 pt-6">
               {/* Orb */}
               <div className="relative mt-4 mb-8 flex h-40 w-40 items-center justify-center">

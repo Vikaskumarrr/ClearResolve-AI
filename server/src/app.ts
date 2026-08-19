@@ -11,6 +11,7 @@ import { uploadRouter } from "./routes/upload.js";
 import { ingestRouter } from "./routes/ingest.js";
 import { jobsRouter } from "./routes/jobs.js";
 import { authRouter } from "./routes/auth.js";
+import { conversationsRouter } from "./routes/conversations.js";
 import { createSessionMiddleware } from "./auth/auth.js";
 
 /**
@@ -51,6 +52,7 @@ export function buildApp(): Express {
   app.use("/api", uploadRouter);
   app.use("/api", ingestRouter);
   app.use("/api", jobsRouter);
+  app.use("/api", conversationsRouter);
 
   // Final error-handling middleware. Express identifies it by its 4 args.
   // eslint-disable-next-line @typescript-eslint/no-unused-vars

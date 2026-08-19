@@ -55,3 +55,17 @@ export function getUsersCollection<T extends Document = Document>(): Promise<
 > {
   return getCollection<T>(config.mongo.usersCollection);
 }
+
+/** Collection holding per-user chat conversations. */
+export function getConversationsCollection<
+  T extends Document = Document
+>(): Promise<Collection<T>> {
+  return getCollection<T>(config.mongo.conversationsCollection);
+}
+
+/** Collection holding messages belonging to conversations. */
+export function getMessagesCollection<T extends Document = Document>(): Promise<
+  Collection<T>
+> {
+  return getCollection<T>(config.mongo.messagesCollection);
+}

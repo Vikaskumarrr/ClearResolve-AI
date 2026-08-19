@@ -33,10 +33,20 @@ export const config = {
     chunksCollection: process.env.MONGODB_COLLECTION ?? "chunks",
     jobsCollection: "jobs",
     usersCollection: "users",
+    conversationsCollection: "conversations",
+    messagesCollection: "messages",
     vectorIndexName: requireEnv("VECTOR_INDEX_NAME"),
   },
   embeddings: { model: "gemini-embedding-001", dimensions: 3072 },
   chat: { model: "gemini-flash-latest" },
+  conversations: {
+    /** Maximum length of a conversation title derived from the first message. */
+    titleMaxLength: 60,
+    /** How long a conversation is retained after its last update, in days. */
+    retentionDays: Number(process.env.RETENTION_DAYS ?? 30),
+    /** Interval between retention sweeps: 1 hour (in milliseconds). */
+    retentionSweepIntervalMs: 60 * 60 * 1000,
+  },
   chunking: { chunkSize: 1000, chunkOverlap: 200 },
   retrieval: { k: 4 },
   limits: { maxFileSizeBytes: 10 * 1024 * 1024 }, // single source of truth

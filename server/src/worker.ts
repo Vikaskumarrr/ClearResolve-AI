@@ -213,6 +213,20 @@ function installShutdownHandlers(): void {
 
 async function main(): Promise<void> {
   installShutdownHandlers();
+
+  // Bootstrap chat-history indexes and start the retention sweep before the
+  // poll loop. These modules read `config`, so they are dynamically imported
+  // here (after dotenv has populated the environment) to preserve the
+  // dotenv-before-config ordering established at the top of this file.
+  const { ensureConversationIndexes } = await import(
+    "./conversations/indexes.js"
+  );
+  const { startRetentionScheduler } = await import(
+    "./conversations/retention.js"
+  );
+  await ensureConversationIndexes();
+  startRetentionScheduler();
+
   await pollLoop();
 }
 

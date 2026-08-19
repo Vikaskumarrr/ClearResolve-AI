@@ -60,6 +60,16 @@ export class ValidationError extends AppError {
   }
 }
 
+/** 404 - the requested resource does not exist or is not owned by the user. */
+export class NotFoundError extends AppError {
+  readonly code = "NOT_FOUND";
+  readonly status = 404;
+
+  constructor(message = "Resource not found") {
+    super(message);
+  }
+}
+
 /** 400 - the source format is not one of the supported loaders. */
 export class UnsupportedFormatError extends AppError {
   readonly code = "UNSUPPORTED_FORMAT";

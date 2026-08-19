@@ -12,6 +12,15 @@ dotenv.config({ path: path.resolve(__dirname, "../../.env") });
 const { buildApp } = await import("./app.js");
 
 const app = buildApp();
+
+// Ensure the chat-history indexes exist before serving traffic. Dynamically
+// imported so it evaluates only after env is loaded (preserves the
+// dotenv-before-config ordering). Index creation is idempotent.
+const { ensureConversationIndexes } = await import(
+  "./conversations/indexes.js"
+);
+await ensureConversationIndexes();
+
 const port = Number(process.env.PORT ?? 4000);
 
 app.listen(port, () => {
