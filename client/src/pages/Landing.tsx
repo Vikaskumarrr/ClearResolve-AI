@@ -674,7 +674,7 @@ export default function Landing() {
           </span>
         </h1>
 
-        <p className="mx-auto mt-6 max-w-xl text-base text-white">
+        <p className="mx-auto mt-6 max-w-xl text-base text-https://github.com/vedcloudia/vedcloudiahttps://github.com/vedcloudia/vedcloudiahttps://github.com/vedcloudia/vedcloudiahttps://github.com/vedcloudia/vedcloudiahttps://github.com/vedcloudia/vedcloudiahttps://github.com/vedcloudia/vedcloudia">
           ClearResolveAI turns your documents and websites into a searchable
           knowledge base, then answers your questions with accurate, cited
           responses.
