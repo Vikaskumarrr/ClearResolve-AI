@@ -1,3 +1,4 @@
+
 /**
  * Idempotent index bootstrap for the chat-history collections.
  *
