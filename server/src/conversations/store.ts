@@ -87,7 +87,7 @@ export async function listConversations(
     .sort({ updatedAt: -1 })
     .toArray();
   return docs as Conversation[];
-}
+};
 
 /**
  * Fetch a single conversation, enforcing ownership.
