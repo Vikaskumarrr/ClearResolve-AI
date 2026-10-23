@@ -26,4 +26,4 @@ export function deriveTitle(
 ): string {
   const firstLine = content.trim().split(/\r?\n/, 1)[0]?.trim() ?? "";
   return firstLine.length > limit ? firstLine.slice(0, limit) : firstLine;
-}
+};
