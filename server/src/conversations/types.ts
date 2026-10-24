@@ -81,4 +81,4 @@ export interface Message {
   seq: number;
   /** Creation timestamp. */
   createdAt: Date;
-}
+};
