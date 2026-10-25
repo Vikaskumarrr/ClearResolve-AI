@@ -29,4 +29,4 @@ export function requireNonBlankString(value: unknown, field: string): string {
     throw new ValidationError(`${field} is required`);
   }
   return value;
-}
+};
