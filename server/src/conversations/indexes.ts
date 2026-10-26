@@ -39,4 +39,4 @@ export async function ensureConversationIndexes(): Promise<void> {
     messages.createIndex({ conversationId: 1, seq: 1 }),
     messages.createIndex({ userId: 1 }),
   ]);
-}
+};
