@@ -55,4 +55,4 @@ export function startRetentionScheduler(): NodeJS.Timeout {
       console.error("retention sweep failed:", e),
     );
   }, config.conversations.retentionSweepIntervalMs);
-}
+};
