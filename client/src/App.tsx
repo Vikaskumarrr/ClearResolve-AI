@@ -11,4 +11,4 @@ export default function App() {
       <Route path="/dashboard" element={<Dashboard />} />
     </Routes>
   );
-}
+};
